@@ -1,0 +1,622 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="format-detection" content="telephone=no"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black"><link rel="icon" href="/assets/favicon16.png?v=2.0.0" type="image/png" sizes="16x16"><link rel="icon" href="/assets/favicon32.png?v=2.0.0" type="image/png" sizes="32x32"><meta name="google-site-verification" content="aAzZPcSXS-6j9fD9Ys-ArQinwI-_EXIrBAEZGVEFyVc"><meta name="description" content="MySQL索引                           索引常见模型       哈希表、有序数组和搜索树">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MySQL索引笔记">
+<meta property="og:url" content="https://guangzhengli.github.io/2020/08/01/MySQL%E7%B4%A2%E5%BC%95/index.html">
+<meta property="og:site_name" content="Ligz&#39;s Blog">
+<meta property="og:description" content="MySQL索引                           索引常见模型       哈希表、有序数组和搜索树">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/guangzhengli/ImgURL@master/uPic/R0Vc7R.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/guangzhengli/ImgURL@master/uPic/iS3LU2.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/guangzhengli/ImgURL@master/uPic/15OSYr.png">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/guangzhengli/ImgURL@master/uPic/y2tImO.png">
+<meta property="article:published_time" content="2020-08-01T11:38:20.000Z">
+<meta property="article:modified_time" content="2020-12-06T09:25:56.984Z">
+<meta property="article:author" content="GuangZheng Li">
+<meta property="article:tag" content="database">
+<meta property="article:tag" content="MySQL">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://cdn.jsdelivr.net/gh/guangzhengli/ImgURL@master/uPic/R0Vc7R.png"><meta name="keywords" content="GuangZheng Li, Ligz's Blog"><meta name="description" content=""><title>MySQL索引笔记 | Ligz's Blog</title><link ref="canonical" href="https://guangzhengli.github.io/2020/08/01/MySQL%E7%B4%A2%E5%BC%95/"><link rel="dns-prefetch" href="https://cdn.jsdelivr.net"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.12.1/css/all.min.css" type="text/css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gitalk@latest/dist/gitalk.min.css" type="text/css"><link rel="stylesheet" href="/css/index.css?v=2.0.0"><script>var Stun = window.Stun || {};
+var CONFIG = {
+  root: '/',
+  algolia: undefined,
+  fontIcon: {"prompt":{"success":"fas fa-check-circle","info":"fas fa-arrow-circle-right","warning":"fas fa-exclamation-circle","error":"fas fa-times-circle"},"copyBtn":"fas fa-copy"},
+  sidebar: {"offsetTop":"20px","tocMaxDepth":3},
+  header: {"enable":true,"showOnPost":true,"scrollDownIcon":true},
+  postWidget: {"endText":true},
+  nightMode: {"enable":true},
+  back2top: {"enable":true},
+  codeblock: {"style":"carbon","highlight":"light","wordWrap":false},
+  reward: false,
+  fancybox: false,
+  zoomImage: {"gapAside":"20px"},
+  galleryWaterfall: undefined,
+  lazyload: false,
+  pjax: {"avoidBanner":true},
+  externalLink: {"icon":{"enable":true,"name":"fas fa-external-link-alt"}},
+  shortcuts: undefined,
+  prompt: {"copyButton":"复制","copySuccess":"复制成功","copyError":"复制失败"},
+  sourcePath: {"js":"js","css":"css","images":"images"},
+};
+
+window.CONFIG = CONFIG;</script><meta name="generator" content="Hexo 4.2.1"></head><body><div class="container" id="container"><header class="header" id="header"><div class="header-inner"><nav class="header-nav header-nav--fixed"><div class="header-nav-inner"><div class="header-nav-menubtn"><i class="fas fa-bars"></i></div><div class="header-nav-menu"><div class="header-nav-menu-item"><a class="header-nav-menu-item__link" href="/"><span class="header-nav-menu-item__icon"><i class="fas fa-home"></i></span><span class="header-nav-menu-item__text">首页</span></a></div><div class="header-nav-menu-item"><a class="header-nav-menu-item__link" href="/archives/"><span class="header-nav-menu-item__icon"><i class="fas fa-folder-open"></i></span><span class="header-nav-menu-item__text">归档</span></a></div><div class="header-nav-menu-item"><a class="header-nav-menu-item__link" href="/categories/"><span class="header-nav-menu-item__icon"><i class="fas fa-layer-group"></i></span><span class="header-nav-menu-item__text">分类</span></a></div><div class="header-nav-menu-item"><a class="header-nav-menu-item__link" href="/tags/"><span class="header-nav-menu-item__icon"><i class="fas fa-tags"></i></span><span class="header-nav-menu-item__text">标签</span></a></div></div><div class="header-nav-search"><span class="header-nav-search__icon"><i class="fas fa-search"></i></span><span class="header-nav-search__text">搜索</span></div><div class="header-nav-mode"><div class="mode"><div class="mode-track"><span class="mode-track-moon"></span><span class="mode-track-sun"></span></div><div class="mode-thumb"></div></div></div></div></nav><div class="header-banner"><div class="header-banner-info"><div class="header-banner-info__title">Ligz's Blog</div><div class="header-banner-info__subtitle"></div></div><div class="header-banner-arrow"><div class="header-banner-arrow__icon"><i class="fas fa-angle-down"></i></div></div></div></div></header><main class="main" id="main"><div class="main-inner"><div class="content-wrap" id="content-wrap"><div class="content" id="content"><!-- Just used to judge whether it is an article page--><div id="is-post"></div><div class="post"><header class="post-header"><h1 class="post-title">MySQL索引笔记</h1><div class="post-meta"><span class="post-meta-item post-meta-item--createtime"><span class="post-meta-item__icon"><i class="far fa-calendar-plus"></i></span><span class="post-meta-item__info">发表于</span><span class="post-meta-item__value">2020-08-01</span></span><span class="post-meta-item post-meta-item--updatetime"><span class="post-meta-item__icon"><i class="far fa-calendar-check"></i></span><span class="post-meta-item__info">更新于</span><span class="post-meta-item__value">2020-12-06</span></span><span class="post-meta-item post-meta-item--wordcount"><span class="post-meta-item__icon"><i class="far fa-file-word"></i></span><span class="post-meta-item__info">字数统计</span><span class="post-meta-item__value">5.8k</span></span><span class="post-meta-item post-meta-item--readtime"><span class="post-meta-item__icon"><i class="far fa-clock"></i></span><span class="post-meta-item__info">阅读时长</span><span class="post-meta-item__value">34分</span></span><span class="post-meta-item post-meta-item--visitors"><span class="post-meta-item__icon"><i class="fas fa-eye"></i></span><span class="post-meta-item__info">阅读次数</span><span class="post-meta-item__value" id="busuanzi_value_page_pv"></span></span></div></header><div class="post-body"><h1 id="MySQL索引">
+          <a href="#MySQL索引" class="heading-link"><i class="fas fa-link"></i></a>MySQL索引</h1>
+      
+        <h2 id="索引常见模型">
+          <a href="#索引常见模型" class="heading-link"><i class="fas fa-link"></i></a>索引常见模型</h2>
+      <p>哈希表、有序数组和搜索树</p>
+<a id="more"></a>
+
+
+        <h3 id="哈希表">
+          <a href="#哈希表" class="heading-link"><i class="fas fa-link"></i></a>哈希表</h3>
+      <p>哈希表是一种以键 - 值(key-value)存储数据的结构，我们只要输入待查找的值即 key， 就可以找到其对应的值即 Value。哈希的思路很简单，把值放在数组里，用一个哈希函数 把 key 换算成一个确定的位置，然后把 value 放在数组的这个位置。</p>
+<p>不可避免地，多个 key 值经过哈希函数的换算，会出现同一个值的情况。处理这种情况的 一种方法是，拉出一个链表。所以哈希索引的缺点是做区间查询的速度很慢。</p>
+<p>所以，哈希表这种结构适用于只有等值查询的场景</p>
+<p>###有序数组</p>
+<p>有序数组在等值查询和范围查询场景中的性能就都非常优秀</p>
+<p>查询时使用二分法来查询，这个时间复杂度是 O(log(N))。在需要更新数据的时候就麻烦了，你往中间插入一个记录就必须得挪动后面所有的记录，成本太高</p>
+<p>所以，有序数组索引只适用于静态存储引擎，比如你要保存的是 2017 年某个城市的所有人口信息，这类不会再修改的数据。</p>
+
+        <h3 id="二叉树">
+          <a href="#二叉树" class="heading-link"><i class="fas fa-link"></i></a>二叉树</h3>
+      <p>二叉搜索树的特点是:每个节点的左儿子小于父节点，父节点又小于右儿子。这样如果你要查，按照搜索顺序这个时间复杂度是 O(log(N))。</p>
+<p>当然为了维持 O(log(N)) 的查询复杂度，你就需要保持这棵树是平衡二叉树。为了做这个保证，更新的时间复杂度也是 O(log(N))。</p>
+<p>树可以有二叉，也可以有多叉。多叉树就是每个节点有多个儿子，儿子之间的大小保证从左到右递增。二叉树是搜索效率最高的，但是实际上大多数的数据库存储却并不使用二叉树。其原因是，索引不止存在内存中，还要写到磁盘上。</p>
+<p>你可以想象一下一棵 100 万节点的平衡二叉树，树高 20。一次查询可能需要访问 20 个数 据块。在机械硬盘时代，从磁盘随机读一个数据块需要 10 ms 左右的寻址时间。也就是说，对于一个 100 万行的表，如果使用二叉树来存储，单独访问一个行可能需要 20 个 10 ms 的时间，这个查询可真够慢的。</p>
+<p>为了让一个查询尽量少地读磁盘，就必须让查询过程访问尽量少的数据块。那么，我们就不应该使用二叉树，而是要使用“N 叉”树。这里，“N 叉”树中的“N”取决于数据块的大小。</p>
+<p>以 InnoDB 的一个整数字段索引为例，这个 N 差不多是 1200。这棵树高是 4 的时候，就可以存 1200 的 3 次方个值，这已经 17 亿了。考虑到树根的数据块总是在内存中的，一 个 10 亿行的表上一个整数字段的索引，查找一个值最多只需要访问 3 次磁盘。其实，树的第二层也有很大概率在内存中，那么访问磁盘的平均次数就更少了。</p>
+<p>N 叉树由于在读写上的性能优点，以及适配磁盘的访问模式，已经被广泛应用在数据库引擎中了。</p>
+
+        <h2 id="InnoDB-的索引模型">
+          <a href="#InnoDB-的索引模型" class="heading-link"><i class="fas fa-link"></i></a>InnoDB 的索引模型</h2>
+      <p>在 InnoDB 中，表都是根据主键顺序以索引的形式存放的，这种存储方式的表称为索引组织表。又因为前面我们提到的，InnoDB 使用了 B+ 树索引模型，所以数据都是存储在 B+ 树中的。</p>
+<p>每一个索引在 InnoDB 里面对应一棵 B+ 树。</p>
+<p>假设，我们有一个主键列为 ID 的表，表中有字段 k，并且在 k 上有索引。 这个表的建表语句是:</p>
+<figure class="highlight plain"><div class="table-container"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; create table T( </span><br><span class="line">id int primary key,</span><br><span class="line">k int not null,</span><br><span class="line">name varchar(16),</span><br><span class="line">index (k)</span><br><span class="line">)engine=InnoDB;</span><br></pre></td></tr></tbody></table></div></figure>
+
+<p>表中 R1~R5 的 (ID,k) 值分别为 (100,1)、(200,2)、(300,3)、(500,5) 和 (600,6)，两棵树 的示例示意图如下。</p>
+<img src="https://cdn.jsdelivr.net/gh/guangzhengli/ImgURL@master/uPic/R0Vc7R.png" alt="R0Vc7R" style="zoom:50%;">
+
+<p>从图中不难看出，根据叶子节点的内容，索引类型分为主键索引和非主键索引。</p>
+<p>主键索引的叶子节点存的是整行数据。在 InnoDB 里，主键索引也被称为聚簇索引 (clustered index)。</p>
+<p>非主键索引的叶子节点内容是主键的值。在 InnoDB 里，非主键索引也被称为二级索引 (secondary index)。</p>
+<p>根据上面的索引结构说明，我们来讨论一个问题:基于主键索引和普通索引的查询有什么 区别?</p>
+<p>如果语句是 select * from T where ID=500，即主键查询方式，则只需要搜索 ID 这棵 B+ 树;</p>
+<p>如果语句是 select * from T where k=5，即普通索引查询方式，则需要先搜索 k 索引 树，得到 ID 的值为 500，再到 ID 索引树搜索一次。这个过程称为回表。</p>
+<p>也就是说，基于非主键索引的查询需要多扫描一棵索引树。因此，我们在应用中应该尽量使用主键查询。</p>
+
+        <h3 id="覆盖索引">
+          <a href="#覆盖索引" class="heading-link"><i class="fas fa-link"></i></a>覆盖索引</h3>
+      <p>如果我执行 select * from T where k between 3 and 5，需要执行几次树的搜索操作，会扫描多少行?</p>
+<p>现在，我们一起来看看这条 SQL 查询语句的执行流程:</p>
+<ol>
+<li><p>在 k 索引树上找到 k=3 的记录，取得 ID = 300;</p>
+</li>
+<li><ol start="2">
+<li>再到 ID 索引树查到 ID=300 对应的 R3;</li>
+</ol>
+</li>
+<li><p>在 k 索引树取下一个值 k=5，取得 ID=500;</p>
+</li>
+<li><p>再回到 ID 索引树查到 ID=500 对应的 R4;</p>
+</li>
+<li><p>在 k 索引树取下一个值 k=6，不满足条件，循环结束。</p>
+</li>
+</ol>
+<p>在这个过程中，回到主键索引树搜索的过程，我们称为回表。可以看到，这个查询过程读 了 k 索引树的 3 条记录(步骤 1、3 和 5)，回表了两次(步骤 2 和 4)。</p>
+<p>如果执行的语句是 select ID from T where k between 3 and 5，这时只需要查 ID 的 值，而 ID 的值已经在 k 索引树上了，因此可以直接提供查询结果，不需要回表。也就是 说，在这个查询里面，索引 k 已经“覆盖了”我们的查询需求，我们称为覆盖索引。</p>
+<p>由于覆盖索引可以减少树的搜索次数，显著提升查询性能，所以使用覆盖索引是一个常用的性能优化手段。</p>
+<p>基于上面覆盖索引的说明，我们来讨论一个问题:在一个市民信息表上，是否有必要将身份证号和名字建立联合索引?</p>
+<p>假设这个市民表的定义是这样的:</p>
+<figure class="highlight plain"><div class="table-container"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">CREATE TABLE `tuser` (</span><br><span class="line">`id` int(11) NOT NULL,</span><br><span class="line">`id_card` varchar(32) DEFAULT NULL,</span><br><span class="line">`name` varchar(32) DEFAULT NULL, </span><br><span class="line">`age` int(11) DEFAULT NULL, </span><br><span class="line">`ismale` tinyint(1) DEFAULT NULL, </span><br><span class="line">PRIMARY KEY (`id`),</span><br><span class="line">KEY `id_card` (`id_card`),</span><br><span class="line">KEY `name_age` (`name`,`age`) </span><br><span class="line">) ENGINE=InnoDB</span><br></pre></td></tr></tbody></table></div></figure>
+
+<p>我们知道，身份证号是市民的唯一标识。也就是说，如果有根据身份证号查询市民信息的需求，我们只要在身份证号字段上建立索引就够了。而再建立一个(身份证号、姓名)的联合索引，是不是浪费空间?</p>
+<p>如果现在有一个高频请求，要根据市民的身份证号查询他的姓名，这个联合索引就有意义了。它可以在这个高频请求上用到覆盖索引，不再需要回表查整行记录，减少语句的执行时间。</p>
+<p>当然，索引字段的维护总是有代价的。因此，在建立冗余索引来支持覆盖索引时就需要权 衡考虑了</p>
+
+        <h3 id="最左前缀原则">
+          <a href="#最左前缀原则" class="heading-link"><i class="fas fa-link"></i></a>最左前缀原则</h3>
+      <p>看到这里你一定有一个疑问，如果为每一种查询都设计一个索引，索引是不是太多了。如果我现在要按照市民的身份证号去查他的家庭地址呢?虽然这个查询需求在业务中出现的概率不高，但总不能让它走全表扫描吧?反过来说，单独为一个不频繁的请求创建一个(身份证号，地址)的索引又感觉有点浪费。应该怎么做呢?</p>
+<p>这里，我先和你说结论吧。B+ 树这种索引结构，可以利用索引的“最左前缀”，来定位记录。</p>
+<p>为了直观地说明这个概念，我们用(name，age)这个联合索引来分析。</p>
+<img src="https://cdn.jsdelivr.net/gh/guangzhengli/ImgURL@master/uPic/iS3LU2.png" alt="iS3LU2" style="zoom:50%;">
+
+<p>可以看到，索引项是按照索引定义里面出现的字段顺序排序的。</p>
+<p>当你的逻辑需求是查到所有名字是“张三”的人时，可以快速定位到 ID4，然后向后遍历 得到所有需要的结果。</p>
+<p>如果你要查的是所有名字第一个字是“张”的人，你的 SQL 语句的条件是”where name like ‘张 %’”。这时，你也能够用上这个索引，查找到第一个符合条件的记录是 ID3，然 后向后遍历，直到不满足条件为止。</p>
+<p>可以看到，不只是索引的全部定义，只要满足最左前缀，就可以利用索引来加速检索。这 个最左前缀可以是联合索引的最左 N 个字段，也可以是字符串索引的最左 M 个字符。</p>
+<p>基于上面对最左前缀索引的说明，我们来讨论一个问题:在建立联合索引的时候，如何安排索引内的字段顺序。</p>
+<p>这里我们的评估标准是，索引的复用能力。因为可以支持最左前缀，所以当已经有了 (a,b) 这个联合索引后，一般就不需要单独在 a 上建立索引了。因此，第一原则是，如果通过调整顺序，可以少维护一个索引，那么这个顺序往往就是需要优先考虑采用的。</p>
+<p>所以现在你知道了，这段开头的问题里，我们要为高频请求创建 (身份证号，姓名)这个 联合索引，并用这个索引支持“根据身份证号查询地址”的需求。</p>
+<p>那么，如果既有联合查询，又有基于 a、b 各自的查询呢?查询条件里面只有 b 的语句， 是无法使用 (a,b) 这个联合索引的，这时候你不得不维护另外一个索引，也就是说你需要 同时维护 (a,b)、(b) 这两个索引。</p>
+<p>这时候，我们要考虑的原则就是空间了。比如上面这个市民表的情况，name 字段是比 age 字段大的 ，那我就建议你创建一个(name,age) 的联合索引和一个 (age) 的单字段 索引。</p>
+
+        <h3 id="索引下推">
+          <a href="#索引下推" class="heading-link"><i class="fas fa-link"></i></a>索引下推</h3>
+      <p>上一段我们说到满足最左前缀原则的时候，最左前缀可以用于在索引中定位记录。这时，你可能要问，那些不符合最左前缀的部分，会怎么样呢?</p>
+<p>我们还是以市民表的联合索引(name, age)为例。如果现在有一个需求:检索出表 中“名字第一个字是张，而且年龄是 10 岁的所有男孩”。那么，SQL 语句是这么写的:</p>
+<figure class="highlight plain"><div class="table-container"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mysql&gt; select * from tuser where name like '张 %' and age=10 and ismale=1;</span><br></pre></td></tr></tbody></table></div></figure>
+
+<p>你已经知道了前缀索引规则，所以这个语句在搜索索引树的时候，只能用 “张”，找到第 一个满足条件的记录 ID3。当然，这还不错，总比全表扫描要好。</p>
+<p>在 MySQL 5.6 之前，只能从 ID3 开始一个个回表。到主键索引上找出数据行，再对比字 段值。</p>
+<p>而 MySQL 5.6 引入的索引下推优化(index condition pushdown)， 可以在索引遍历过 程中，对索引中包含的字段先做判断，直接过滤掉不满足条件的记录，减少回表次数。</p>
+<img src="https://cdn.jsdelivr.net/gh/guangzhengli/ImgURL@master/uPic/15OSYr.png" alt="15OSYr" style="zoom:50%;">
+
+
+        <h3 id="例子">
+          <a href="#例子" class="heading-link"><i class="fas fa-link"></i></a>例子</h3>
+      <figure class="highlight plain"><div class="table-container"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">CREATE TABLE `geek` (</span><br><span class="line">`a` int(11) NOT NULL, </span><br><span class="line">`b` int(11) NOT NULL, </span><br><span class="line">`c` int(11) NOT NULL,</span><br><span class="line">`d` int(11) NOT NULL,</span><br><span class="line">PRIMARY KEY (`a`,`b`),</span><br><span class="line">KEY `c` (`c`),</span><br><span class="line">KEY `ca` (`c`,`a`), </span><br><span class="line">KEY `cb` (`c`,`b`) </span><br><span class="line">) ENGINE=InnoDB;</span><br></pre></td></tr></tbody></table></div></figure>
+
+<p>有查询条件</p>
+<figure class="highlight plain"><div class="table-container"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">select * from geek where c=N order by a limit 1;</span><br><span class="line">select * from geek where c=N order by b limit 1;</span><br></pre></td></tr></tbody></table></div></figure>
+
+<p>所以建立了 ‘ca’, ‘cb’ 两个索引</p>
+<p>结论： ca 没有必要， cb 有必要</p>
+<p>原因： ca索引，通过索引对数据进行筛选，回表的时候，a本身就是主键索引，所以可以保证有序，所以ca 的索引和 c 的索引是一模一样的 ; cb索引，b上并没有索引，ab索引也无法满足最左匹配原则，可以保留加快排序速度。</p>
+
+        <h3 id="索引维护">
+          <a href="#索引维护" class="heading-link"><i class="fas fa-link"></i></a>索引维护</h3>
+      <p>B+ 树为了维护索引有序性，在插入新值的时候需要做必要的维护。以上面这个图为例， 如果插入新的行 ID 值为 700，则只需要在 R5 的记录后面插入一个新记录。如果新插入的 ID 值为 400，就相对麻烦了，需要逻辑上挪动后面的数据，空出位置。</p>
+<p>而更糟的情况是，如果 R5 所在的数据页已经满了，根据 B+ 树的算法，这时候需要申请一个新的数据页，然后挪动部分数据过去。这个过程称为页分裂。在这种情况下，性能自然会受影响。</p>
+<p>除了性能外，页分裂操作还影响数据页的利用率。原本放在一个页的数据，现在分到两个页中，整体空间利用率降低大约 50%。</p>
+<p>自增主键的插入数据模式，正符合了我们前面提到的递增插入的场景。每次插入一条新记录，都是追加操作，都不涉及到挪动其他记录，也不会触发叶子节点的分裂。而有业务逻辑的字段做主键，则往往不容易保证有序插入，这样写数据成本相对较高。</p>
+<p>除了考虑性能外，我们还可以从存储空间的角度来看。假设你的表中确实有一个唯一字段，比如字符串类型的身份证号，那应该用身份证号做主键，还是用自增字段做主键呢?</p>
+<p>由于每个非主键索引的叶子节点上都是主键的值。如果用身份证号做主键，那么每个二级 索引的叶子节点占用约 20 个字节，而如果用整型做主键，则只要 4 个字节，如果是长整 型(bigint)则是 8 个字节。</p>
+<p>显然，主键长度越小，普通索引的叶子节点就越小，普通索引占用的空间也就越小。</p>
+
+        <h2 id="唯一索引">
+          <a href="#唯一索引" class="heading-link"><i class="fas fa-link"></i></a>唯一索引</h2>
+      <p>假设你在维护一个市民系统，每个人都有一个唯一的身份证号，而且业务代码已经保证了 不会写入两个重复的身份证号。如果市民系统需要按照身份证号查姓名，就会执行类似这 样的 SQL 语句:</p>
+<figure class="highlight plain"><div class="table-container"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">select name from CUser where id_card = 'xxxxxxxyyyyyyzzzzz';</span><br></pre></td></tr></tbody></table></div></figure>
+
+<p>所以，你一定会考虑在 id_card 字段上建索引。从性能的角度考虑，你选择唯一索引还是普通索引呢?选择的依据是什么呢?</p>
+
+        <h3 id="查询过程">
+          <a href="#查询过程" class="heading-link"><i class="fas fa-link"></i></a>查询过程</h3>
+      <p>假设，执行查询的语句是 select id from T where k=5。这个查询语句在索引树上查找的 过程，先是通过 B+ 树从树根开始，按层搜索到叶子节点，也就是图中右下角的这个数据 页，然后可以认为数据页内部通过二分法来定位记录。</p>
+<ul>
+<li><p>对于普通索引来说，查找到满足条件的第一个记录 (5,500) 后，需要查找下一个记录， 直到碰到第一个不满足 k=5 条件的记录。</p>
+</li>
+<li><p>对于唯一索引来说，由于索引定义了唯一性，查找到第一个满足条件的记录后，就会停止继续检索。</p>
+</li>
+</ul>
+<p>那么，这个不同带来的性能差距会有多少呢?答案是，微乎其微。</p>
+<p>你知道的，InnoDB 的数据是按数据页为单位来读写的。也就是说，当需要读一条记录的时候，并不是将这个记录本身从磁盘读出来，而是以页为单位，将其整体读入内存。在 InnoDB 中，每个数据页的大小默认是 16KB。</p>
+<p>因为引擎是按页读写的，所以说，当找到 k=5 的记录的时候，它所在的数据页就都在内存里了。那么，对于普通索引来说，要多做的那一次“查找和判断下一条记录”的操作，就只需要一次指针寻找和一次计算。</p>
+<p>当然，如果 k=5 这个记录刚好是这个数据页的最后一个记录，那么要取下一个记录，必须读取下一个数据页，这个操作会稍微复杂一些。</p>
+<p>但是，我们之前计算过，对于整型字段，一个数据页可以放近千个 key，因此出现这种情况的概率会很低。所以，我们计算平均性能差异时，仍可以认为这个操作成本对于现在的 CPU 来说可以忽略不计。</p>
+
+        <h3 id="更新过程">
+          <a href="#更新过程" class="heading-link"><i class="fas fa-link"></i></a>更新过程</h3>
+      <p>当需要更新一个数据页时，如果数据页在内存中就直接更新，而如果这个数据页还没有在内存中的话，在不影响数据一致性的前提下，InooDB 会将这些更新操作缓存在 change buffer 中，这样就不需要从磁盘中读入这个数据页了。在下次查询需要访问这个数据页的时候，将数据页读入内存，然后执行 change buffer 中与这个页有关的操作。通过这种方式就能保证这个数据逻辑的正确性。</p>
+<p>对于唯一索引来说，所有的更新操作都要先判断这个操作是否违反唯一性约束。比如，要插入 (4,400) 这个记录，就要先判断现在表中是否已经存在 k=4 的记录，而这必须要将数据页读入内存才能判断。如果都已经读入到内存了，那直接更新内存会更快，就没必要使用 change buffer 了。</p>
+<p>因此，唯一索引的更新就不能使用 change buffer，实际上也只有普通索引可以使用。</p>
+<p>如果在更新时，这个记录要更新的目标页不在内存中。这时，InnoDB 的处理流程如下:</p>
+<ul>
+<li><p>对于唯一索引来说，需要将数据页读入内存，判断到没有冲突，插入这个值，语句执行结束;</p>
+</li>
+<li><p>对于普通索引来说，则是将更新记录在 change buffer，语句执行就结束了。</p>
+</li>
+</ul>
+
+        <h2 id="选错索引">
+          <a href="#选错索引" class="heading-link"><i class="fas fa-link"></i></a>选错索引</h2>
+      <p>往表 t 中插入 10 万行记录，取值按整数递增，即:(1,1,1)，(2,2,2)，(3,3,3) 直到 (100000,100000,100000)。</p>
+<figure class="highlight plain"><div class="table-container"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">CREATE TABLE `t` (</span><br><span class="line">`id` int(11) NOT NULL,</span><br><span class="line">`a` int(11) DEFAULT NULL, </span><br><span class="line">`b` int(11) DEFAULT NULL, </span><br><span class="line">PRIMARY KEY (`id`),</span><br><span class="line">KEY `a` (`a`),</span><br><span class="line">KEY `b` (`b`) </span><br><span class="line">)ENGINE=InnoDB;</span><br></pre></td></tr></tbody></table></div></figure>
+
+<figure class="highlight plain"><div class="table-container"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">delimiter ;;</span><br><span class="line">create procedure idata() </span><br><span class="line">begin</span><br><span class="line">	declare i int; </span><br><span class="line">	set i=1; </span><br><span class="line">	while(i&lt;=100000)do</span><br><span class="line">		insert into t values(i, i, i);</span><br><span class="line">		set i=i+1; </span><br><span class="line">		end while;</span><br><span class="line">end;; </span><br><span class="line">delimiter ; </span><br><span class="line">call idata();</span><br></pre></td></tr></tbody></table></div></figure>
+
+<figure class="highlight plain"><div class="table-container"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">explain select * from t where a between 10000 and 20000;</span><br></pre></td></tr></tbody></table></div></figure>
+
+<p>得到的结果是我们所需要的，扫描了10001行，使用了 a 作为索引</p>
+<p><img src="https://cdn.jsdelivr.net/gh/guangzhengli/ImgURL@master/uPic/y2tImO.png" alt="y2tImO"></p>
+<p>发现做了全表扫描，也就是10万行。如果使用 <code>select * from t force index(a) where a between 10000 and 20000;</code>来使用强制使用 a 索引，只用扫描 1万行。</p>
+<p>这是因为，在事务A还没有提交的时候，事务B删除了10万行的数据不能删除，数据的每一行都有两个版本，这样，索引 a 上就有两份。</p>
+<p>优化器得到索引的基数时，预计扫描的行数比原来多了很多，比如原来扫描1万行，现在扫描3万行。尽管还是比10万行的全表扫描要少，但是需要把索引拿出来后回表的代价也算进去。所以优化器选择全表扫描。</p>
+<p>解决方法</p>
+<ul>
+<li>force index(a) 来强制使用</li>
+<li>analyze table t 命令，可以用来重新统计索引信息，让预估重新回到 1 万行</li>
+</ul>
+<p>如果有这样的查询语句</p>
+<figure class="highlight plain"><div class="table-container"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">select * from t where (a between 1 and 1000) and (b between 50000 and 100000) order by b limit 1;</span><br></pre></td></tr></tbody></table></div></figure>
+
+<p>如果使用索引 a 进行查询，那么就是扫描索引 a 的前 1000 个值，然后取到对应的 id，再 到主键索引上去查出每一行，然后根据字段 b 来过滤。显然这样需要扫描 1000 行。</p>
+<p>如果使用索引 b 进行查询，那么就是扫描索引 b 的最后 50001 个值，与上面的执行过程 相同，也是需要回到主键索引上取值再判断，所以需要扫描 50001 行。</p>
+<p>所以你一定会想，如果使用索引 a 的话，执行速度明显会快很多。结果数据库还是选择了 b 索引。</p>
+<p>优化器选择使用索引 b，是因为它认为使用索引 b 可以避免排序(b 本身是索引，已经是有序的了，如果选择索引 b 的话，不需要再做排序，只需要遍历)，所以即使扫描行数多，也判定为代价更小。</p>
+<p>但是实际上选择 a 索引的代价远比 b 要小。我们如果要纠正选择错误。可以</p>
+<ul>
+<li>force index(a) 来强制使用。但是不够优雅</li>
+<li>改成 order by b,a。让数据库认为 a 也需要排序。所以会使用 a 索引</li>
+<li>删除 b 索引</li>
+</ul>
+
+        <h2 id="字符索引">
+          <a href="#字符索引" class="heading-link"><i class="fas fa-link"></i></a>字符索引</h2>
+      <figure class="highlight plain"><div class="table-container"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">alter table SUser add index index1(email);完整索引</span><br></pre></td></tr></tbody></table></div></figure>
+
+<figure class="highlight plain"><div class="table-container"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">alter table SUser add index index2(email(6));前缀索引</span><br></pre></td></tr></tbody></table></div></figure>
+
+<p>为了解决前缀索引可能导致增加很多的扫描次数，我们依次选取不同长度的前缀来看这个值，比如我们要看一下 4~7 个字节的前缀索引， 可以用这个语句</p>
+<figure class="highlight plain"><div class="table-container"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">select </span><br><span class="line">count(distinct left(email,4))as L4, </span><br><span class="line">count(distinct left(email,5))as L5,</span><br><span class="line">count(distinct left(email,6))as L6,</span><br><span class="line">count(distinct left(email,7))as L7,</span><br><span class="line">from SUser;</span><br></pre></td></tr></tbody></table></div></figure>
+
+<p>选择合适的长度来创建前缀索引。</p>
+<p>还有像身份证这种前缀不够区分度的，可以来倒序存储。或者加一个字段专门来存校验码。</p>
+<p>总结：</p>
+<ol>
+<li><p>直接创建完整索引，这样可能比较占用空间;</p>
+</li>
+<li><p>创建前缀索引，节省空间，但会增加查询扫描次数，并且不能使用覆盖索引;</p>
+</li>
+<li><p>倒序存储，再创建前缀索引，用于绕过字符串本身前缀的区分度不够的问题;</p>
+</li>
+<li><p>创建 hash 字段索引，查询性能稳定，有额外的存储和计算消耗，跟第三种方式一样，都不支持范围扫描。</p>
+</li>
+</ol>
+<p>在实际应用中，你要根据业务字段的特点选择使用哪种方式。</p>
+<blockquote>
+<p>参考 《MySQL实战45讲》：<span class="exturl"><a class="exturl__link" href="https://time.geekbang.org/column/intro/100020801" target="_blank" rel="noopener">https://time.geekbang.org/column/intro/100020801</a><span class="exturl__icon"><i class="fas fa-external-link-alt"></i></span></span></p>
+</blockquote>
+<script>
+        document.querySelectorAll('.github-emoji')
+          .forEach(el => {
+            if (!el.dataset.src) { return; }
+            const img = document.createElement('img');
+            img.style = 'display:none !important;';
+            img.src = el.dataset.src;
+            img.addEventListener('error', () => {
+              img.remove();
+              el.style.color = 'inherit';
+              el.style.backgroundImage = 'none';
+              el.style.background = 'none';
+            });
+            img.addEventListener('load', () => {
+              img.remove();
+            });
+            document.body.appendChild(img);
+          });
+      </script></div><footer class="post-footer"><div class="post-ending ending"><div class="ending__text">------ 本文结束，感谢您的阅读 ------</div></div><div class="post-copyright copyright"><div class="copyright-author"><span class="copyright-author__name">本文作者: </span><span class="copyright-author__value"><a href="https://guangzhengli.github.io">GuangZheng Li</a></span></div><div class="copyright-link"><span class="copyright-link__name">本文链接: </span><span class="copyright-link__value"><a href="https://guangzhengli.github.io/2020/08/01/MySQL%E7%B4%A2%E5%BC%95/">https://guangzhengli.github.io/2020/08/01/MySQL%E7%B4%A2%E5%BC%95/</a></span></div><div class="copyright-notice"><span class="copyright-notice__name">版权声明: </span><span class="copyright-notice__value">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.en" rel="external nofollow" target="_blank">BY-NC-SA</a> 许可协议。转载请注明出处！</span></div></div><div class="post-tags"><span class="post-tags-item"><span class="post-tags-item__icon"><i class="fas fa-tag"></i></span><a class="post-tags-item__link" href="https://guangzhengli.github.io/tags/database/">database</a></span><span class="post-tags-item"><span class="post-tags-item__icon"><i class="fas fa-tag"></i></span><a class="post-tags-item__link" href="https://guangzhengli.github.io/tags/MySQL/">MySQL</a></span></div><nav class="post-paginator paginator"><div class="paginator-prev"><a class="paginator-prev__link" href="/2020/08/01/MySQL%E5%AE%9E%E7%8E%B0%E7%BB%86%E8%8A%82/"><span class="paginator-prev__icon"><i class="fas fa-angle-left"></i></span><span class="paginator-prev__text">MySQL语句执行细节</span></a></div><div class="paginator-next"><a class="paginator-next__link" href="/2020/08/01/MySQL%E5%BA%95%E5%B1%82/"><span class="paginator-prev__text">MySQL架构实现细节</span><span class="paginator-next__icon"><i class="fas fa-angle-right"></i></span></a></div></nav></footer></div></div><div class="comments" id="comments"><div id="gitalk-container"></div></div></div><div class="sidebar-wrap" id="sidebar-wrap"><aside class="sidebar" id="sidebar"><div class="sidebar-nav"><span class="sidebar-nav-toc current">文章目录</span><span class="sidebar-nav-ov">站点概览</span></div><section class="sidebar-toc"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#MySQL索引"><span class="toc-number">1.</span> <span class="toc-text">
+          MySQL索引</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#索引常见模型"><span class="toc-number">1.1.</span> <span class="toc-text">
+          索引常见模型</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#哈希表"><span class="toc-number">1.1.1.</span> <span class="toc-text">
+          哈希表</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#二叉树"><span class="toc-number">1.1.2.</span> <span class="toc-text">
+          二叉树</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#InnoDB-的索引模型"><span class="toc-number">1.2.</span> <span class="toc-text">
+          InnoDB 的索引模型</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#覆盖索引"><span class="toc-number">1.2.1.</span> <span class="toc-text">
+          覆盖索引</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#最左前缀原则"><span class="toc-number">1.2.2.</span> <span class="toc-text">
+          最左前缀原则</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#索引下推"><span class="toc-number">1.2.3.</span> <span class="toc-text">
+          索引下推</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#例子"><span class="toc-number">1.2.4.</span> <span class="toc-text">
+          例子</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#索引维护"><span class="toc-number">1.2.5.</span> <span class="toc-text">
+          索引维护</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#唯一索引"><span class="toc-number">1.3.</span> <span class="toc-text">
+          唯一索引</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#查询过程"><span class="toc-number">1.3.1.</span> <span class="toc-text">
+          查询过程</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#更新过程"><span class="toc-number">1.3.2.</span> <span class="toc-text">
+          更新过程</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#选错索引"><span class="toc-number">1.4.</span> <span class="toc-text">
+          选错索引</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#字符索引"><span class="toc-number">1.5.</span> <span class="toc-text">
+          字符索引</span></a></li></ol></li></ol></section><!-- ov = overview--><section class="sidebar-ov hide"><div class="sidebar-ov-author"><div class="sidebar-ov-author__avatar"><img class="sidebar-ov-author__avatar_img" src="/assets/headimg.jpeg" alt="avatar"></div><p class="sidebar-ov-author__text">阅读和思考，真理与自由</p></div><div class="sidebar-ov-social"><a class="sidebar-ov-social-item" href="https://github.com/esmusssein777" target="_blank" rel="noopener" data-popover="Github" data-popover-pos="up"><span class="sidebar-ov-social-item__icon"><i class="fab fa-github"></i></span></a><a class="sidebar-ov-social-item" href="https://www.zhihu.com/people/esmusssein-81" target="_blank" rel="noopener" data-popover="知乎" data-popover-pos="up"><span class="sidebar-ov-social-item__icon">知</span></a><a class="sidebar-ov-social-item" href="https://space.bilibili.com/379034956" target="_blank" rel="noopener" data-popover="social.bilibili" data-popover-pos="up"><span class="sidebar-ov-social-item__icon">Bili</span></a></div><div class="sidebar-ov-state"><a class="sidebar-ov-state-item sidebar-ov-state-item--posts" href="/archives/"><div class="sidebar-ov-state-item__count">8</div><div class="sidebar-ov-state-item__name">归档</div></a><a class="sidebar-ov-state-item sidebar-ov-state-item--categories" href="/categories/"><div class="sidebar-ov-state-item__count">5</div><div class="sidebar-ov-state-item__name">分类</div></a><a class="sidebar-ov-state-item sidebar-ov-state-item--tags" href="/tags/"><div class="sidebar-ov-state-item__count">5</div><div class="sidebar-ov-state-item__name">标签</div></a></div><div class="sidebar-ov-cc"><a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.en" target="_blank" rel="noopener" data-popover="知识共享许可协议" data-popover-pos="up"><img src="/images/cc-by-nc-sa.svg"></a></div></section><div class="sidebar-reading"><div class="sidebar-reading-info"><span class="sidebar-reading-info__text">你已阅读了 </span><span class="sidebar-reading-info__num">0</span></div><div class="sidebar-reading-line"></div></div></aside></div><div class="clearfix"></div></div></main><footer class="footer" id="footer"><div class="footer-inner"><div><span>Copyright © 2018~2020</span><span class="footer__icon"><i class="fas fa-heart"></i></span><span>guangzhengli</span></div><div class="busuanzi"><span class="busuanzi-siteuv"><span class="busuanzi-siteuv__icon"><i class="fas fa-user"></i></span><span class="busuanzi-siteuv__info">访问人数</span><span class="busuanzi-siteuv__value" id="busuanzi_value_site_uv"></span></span><span class="busuanzi-sitepv"><span class="busuanzi-siteuv__icon"><i class="fas fa-eye"></i></span><span class="busuanzi-siteuv__info">浏览总量</span><span class="busuanzi-siteuv__value" id="busuanzi_value_site_pv"></span></span></div></div></footer><div class="loading-bar" id="loading-bar"><div class="loading-bar__progress"></div></div><div class="back2top" id="back2top"><span class="back2top__icon"><i class="fas fa-rocket"></i></span></div></div><div class="search-mask"></div><div class="search-popup"><span class="search-close"></span><div class="search-input"><input placeholder="搜索文章（支持多关键词，请用空格分隔）"></div><div class="search-results"></div></div><script src="https://cdn.jsdelivr.net/npm/jquery@v3.4.1/dist/jquery.min.js"></script><script src="https://cdn.jsdelivr.net/npm/velocity-animate@1.5.2/velocity.min.js"></script><script src="https://cdn.jsdelivr.net/npm/velocity-animate@1.5.2/velocity.ui.min.js"></script><script src="https://cdn.jsdelivr.net/npm/ribbon.js@latest/dist/ribbon.min.js" size="120" alpha="0.6" zIndex="-1"></script><script src="{&quot;enable&quot;:false,&quot;color&quot;:&quot;0,0,0&quot;,&quot;opacity&quot;:0.6,&quot;count&quot;:99,&quot;zIndex&quot;:-1}" color="0,0,0" opacity="0.6" count="99" zIndex="-1"></script><script>function initSearch() {
+  var isXML = true;
+  var search_path = 'search.json';
+
+  if (!search_path) {
+    search_path = 'search.xml';
+  } else if (/json$/i.test(search_path)) {
+    isXML = false;
+  }
+
+  var path = '/' + search_path;
+  $.ajax({
+    url: path,
+    dataType: isXML ? 'xml' : 'json',
+    async: true,
+    success: function (res) {
+      var datas = isXML ? $('entry', res).map(function () {
+        // 将 XML 转为 JSON
+        return {
+          title: $('title', this).text(),
+          content: $('content', this).text(),
+          url: $('url', this).text()
+        };
+      }).get() : res;
+      var $input = $('.search-input input');
+      var $result = $('.search-results');
+      // 搜索对象（标题、内容）的权重，影响显示顺序
+      var WEIGHT = { title: 100, content: 1 };
+      var searchPost = function () {
+        var searchText = $input.val().toLowerCase().trim();
+        // 根据空白字符分隔关键字
+        var keywords = searchText.split(/[\s]+/);
+        // 搜索结果
+        var matchPosts = [];
+
+        // 有多个关键字时，将原文字整个保存下来
+        if (keywords.length > 1) {
+          keywords.push(searchText);
+        }
+        // 防止未输入字符时搜索
+        if (searchText.length > 0) {
+          datas.forEach(function (data) {
+            var isMatch  = false;
+            // 没有标题的文章使用预设的 i18n 变量代替
+            var title = (data.title && data.title.trim()) || '[ 文章无标题 ]';
+            var titleLower = title && title.toLowerCase();
+            // 删除 HTML 标签 和 所有空白字符
+            var content = data.content && data.content.replace(/<[^>]+>/g, '');
+            var contentLower = content && content.toLowerCase();
+            // 删除重复的 /
+            var postURL = data.url && decodeURI(data.url).replace(/\/{2,}/g, '/');
+            // 标题中匹配到的关键词
+            var titleHitSlice = [];
+            // 内容中匹配到的关键词
+            var contentHitSlice = [];
+
+            keywords.forEach(function (keyword) {
+              /**
+              * 获取匹配的关键词的索引
+              * @param {String} keyword 要匹配的关键字
+              * @param {String} text 原文字
+              * @param {Boolean} caseSensitive 是否区分大小写
+              * @param {Number} weight 匹配对象的权重。权重大的优先显示
+              * @return {Array}
+              */
+              function getIndexByword (word, text, caseSensitive, weight) {
+                if (!word || !text) {
+                  return [];
+                };
+
+                var startIndex = 0; // 每次匹配的开始索引
+                var index = -1;     // 匹配到的索引值
+                var result = [];    // 匹配结果
+
+                if (!caseSensitive) {
+                  word = word.toLowerCase();
+                  text = text.toLowerCase();
+                }
+
+                while((index = text.indexOf(word, startIndex)) !== -1) {
+                  var hasMatch = false;
+                  // 索引位置相同的关键词，保留长度较长的
+                  titleHitSlice.forEach(function (hit) {
+                    if (hit.index === index && hit.word.length < word.length) {
+                      hit.word = word;
+                      hasMatch = true;
+                    }
+                  });
+                  startIndex = index + word.length;
+                  !hasMatch && result.push({ index: index, word: word, weight: weight });
+                }
+                return result;
+              }
+              titleHitSlice = titleHitSlice.concat(getIndexByword(keyword, titleLower, false, WEIGHT.title));
+              contentHitSlice = contentHitSlice.concat(getIndexByword(keyword, contentLower, false, WEIGHT.content));
+            });
+
+            var hitTitle = titleHitSlice.length;
+            var hitContent = contentHitSlice.length;
+
+            if (hitTitle > 0 || hitContent > 0) {
+              isMatch = true;
+            }
+            if (isMatch) {
+              ;[titleHitSlice, contentHitSlice].forEach(function (hit) {
+                // 按照匹配文字的索引的递增顺序排序
+                hit.sort(function (left, right) {
+                  return left.index - right.index;
+                });
+              });
+              /**
+              * 给文本中匹配到的关键词添加标记，从而进行高亮显示
+              * @param {String} text 原文本
+              * @param {Array} hitSlice 匹配项的索引信息
+              * @param {Number} start 开始索引
+              * @param {Number} end 结束索引
+              * @return {String}
+              */
+              function highlightKeyword (text, hitSlice, start, end) {
+                if (!text || !hitSlice || !hitSlice.length) {
+                  return;
+                }
+
+                var result = '';
+                var startIndex = start;
+                var endIndex = end;
+                hitSlice.forEach(function (hit) {
+                  if (hit.index < startIndex) {
+                    return;
+                  }
+
+                  var hitWordEnd = hit.index + hit.word.length;
+                  result += text.slice(startIndex, hit.index);
+                  result += '<b>' + text.slice(hit.index, hitWordEnd) + '</b>';
+                  startIndex = hitWordEnd;
+                });
+                result += text.slice(startIndex, endIndex);
+                return result;
+              }
+
+              var postData = {};
+              // 文章总的搜索权重
+              var postWeight = titleHitSlice.length * WEIGHT.title + contentHitSlice.length * WEIGHT.content;
+              // 标记匹配关键词后的标题
+              var postTitle = highlightKeyword(title, titleHitSlice, 0, title.length) || title;
+              // 标记匹配关键词后的内容
+              var postContent;
+              // 显示内容的长度
+              var SHOW_WORD_LENGTH = 200;
+              // 命中关键词前的字符显示长度
+              var SHOW_WORD_FRONT_LENGTH = 20;
+              var SHOW_WORD_END_LENGTH = SHOW_WORD_LENGTH - SHOW_WORD_FRONT_LENGTH;
+
+              // 截取匹配的第一个字符，前后共 200 个字符来显示
+              if (contentHitSlice.length > 0) {
+                var firstIndex = contentHitSlice[0].index;
+                var start = firstIndex > SHOW_WORD_FRONT_LENGTH ? firstIndex - SHOW_WORD_FRONT_LENGTH : 0;
+                var end = firstIndex + SHOW_WORD_END_LENGTH;
+                postContent = highlightKeyword(content, contentHitSlice, start, end);
+              } else { // 未匹配到内容，直接截取前 200 个字符来显示
+                postContent = content.slice(0, SHOW_WORD_LENGTH);
+              }
+              postData.title = postTitle;
+              postData.content = postContent;
+              postData.url = postURL;
+              postData.weight = postWeight;
+              matchPosts.push(postData);
+            }
+          });
+        }
+
+        var resultInnerHtml = '';
+        if (matchPosts.length) {
+          // 按权重递增的顺序排序，使权重大的优先显示
+          matchPosts.sort(function (left, right) {
+            return right.weight - left.weight;
+          });
+          resultInnerHtml += '<ul>';
+          matchPosts.forEach(function (post) {
+            resultInnerHtml += '<li><a class="search-results-title" href="' + post.url + '">';
+            resultInnerHtml += post.title;
+            resultInnerHtml += '</a><div class="search-results-content">';
+            resultInnerHtml += post.content;
+            resultInnerHtml += '</div></li>';
+          });
+          resultInnerHtml += '</ul>';
+        } else {
+          resultInnerHtml += '<div class="search-results-none"><i class="far fa-meh"></i></div>';
+        }
+        $result.html(resultInnerHtml);
+      };
+      $input.on('input', searchPost);
+      $input.on('keyup', function (e) {
+        if (e.keyCode === Stun.utils.codeToKeyCode('Enter')) {
+          searchPost();
+        }
+      });
+    }
+  });
+}
+
+function closeSearch () {
+  $('body').css({ overflow: 'auto' });
+  $('.search-popup').css({ display: 'none' });
+  $('.search-mask').css({ display: 'none' });
+}
+
+window.addEventListener('DOMContentLoaded', function () {
+  Stun.utils.pjaxReloadLocalSearch = function () {
+    $('.header-nav-search').on('click', function (e) {
+      e.stopPropagation();
+      $('body').css('overflow', 'hidden');
+      $('.search-popup')
+        .velocity('stop')
+        .velocity('transition.expandIn', {
+          duration: 300,
+          complete: function () {
+            $('.search-popup input').focus();
+          }
+        });
+      $('.search-mask')
+        .velocity('stop')
+        .velocity('transition.fadeIn', {
+          duration: 300
+        });
+
+      initSearch();
+    });
+    $('.search-mask, .search-close').on('click', function () {
+      closeSearch();
+    });
+    $(document).on('keydown', function (e) {
+      // Escape <=> 27
+      if (e.keyCode === Stun.utils.codeToKeyCode('Escape')) {
+        closeSearch();
+      }
+    });
+  };
+
+  Stun.utils.pjaxReloadLocalSearch();
+}, false);</script><script src="https://cdn.jsdelivr.net/npm/pjax@latest/pjax.min.js"></script><script>window.addEventListener('DOMContentLoaded', function () {
+  var pjax = new Pjax({"selectors":["head title","#main",".pjax-reload"],"history":true,"scrollTo":false,"scrollRestoration":false,"cacheBust":false,"debug":false,"currentUrlFullReload":false,"timeout":0});
+  // 加载进度条的计时器
+  var loadingTimer = null;
+
+  // 重置页面 Y 方向上的滚动偏移量
+  document.addEventListener('pjax:send', function () {
+    $('.header-nav-menu').removeClass('show');
+    if (CONFIG.pjax && CONFIG.pjax.avoidBanner) {
+      $('html').velocity('scroll', {
+        duration: 500,
+        offset: $('#header').height(),
+        easing: 'easeInOutCubic'
+      });
+    }
+
+    var loadingBarWidth = 20;
+    var MAX_LOADING_WIDTH = 95;
+
+    $('.loading-bar').addClass('loading');
+    $('.loading-bar__progress').css('width', loadingBarWidth + '%');
+    clearInterval(loadingTimer);
+    loadingTimer = setInterval(function () {
+      loadingBarWidth += 3;
+      if (loadingBarWidth > MAX_LOADING_WIDTH) {
+        loadingBarWidth = MAX_LOADING_WIDTH;
+      }
+      $('.loading-bar__progress').css('width', loadingBarWidth + '%');
+    }, 500);
+  }, false);
+
+  window.addEventListener('pjax:complete', function () {
+    clearInterval(loadingTimer);
+    $('.loading-bar__progress').css('width', '100%');
+    $('.loading-bar').removeClass('loading');
+    setTimeout(function () {
+      $('.loading-bar__progress').css('width', '0');
+    }, 400);
+    $('link[rel=prefetch], script[data-pjax-rm]').each(function () {
+      $(this).remove();
+    });
+    $('script[data-pjax], #pjax-reload script').each(function () {
+      $(this).parent().append($(this).remove());
+    });
+
+    if (Stun.utils.pjaxReloadBoot) {
+      Stun.utils.pjaxReloadBoot();
+    }
+    if (Stun.utils.pjaxReloadScroll) {
+      Stun.utils.pjaxReloadScroll();
+    }
+    if (Stun.utils.pjaxReloadSidebar) {
+      Stun.utils.pjaxReloadSidebar();
+    }
+    if (false) {
+      if (Stun.utils.pjaxReloadHeader) {
+        Stun.utils.pjaxReloadHeader();
+      }
+      if (Stun.utils.pjaxReloadScrollIcon) {
+        Stun.utils.pjaxReloadScrollIcon();
+      }
+      if (Stun.utils.pjaxReloadLocalSearch) {
+        Stun.utils.pjaxReloadLocalSearch();
+      }
+    }
+  }, false);
+}, false);</script><div id="pjax-reload"><script src="https://cdn.jsdelivr.net/gh/sukkaw/busuanzi@latest/bsz.pure.mini.js" async></script></div><script src="https://cdn.jsdelivr.net/npm/gitalk@latest/dist/gitalk.min.js" data-pjax=""></script><script src="https://cdn.jsdelivr.net/npm/js-md5@latest/src/md5.min.js" data-pjax=""></script><script data-pjax="">function loadGitalk () {
+  if (!document.getElementById('gitalk-container')) {
+    return;
+  }
+
+  var gitalk = new Gitalk({
+    id: md5(window.location.pathname.slice(1)),
+    clientID: '116d9541a4ccef540e18',
+    clientSecret: 'c0a9f1545f3bca201c8fe2eeebb10da0a23b10f7',
+    repo: 'guangzhengli.github.io',
+    owner: 'guangzhengli',
+    admin: ['guangzhengli'],
+    distractionFreeMode: 'true',
+    language: 'zh-CN'
+  });
+  gitalk.render('gitalk-container');
+}
+
+if (true) {
+  loadGitalk();
+} else {
+  window.addEventListener('DOMContentLoaded', loadGitalk, false);
+}</script><script src="/js/utils.js?v=2.0.0"></script><script src="/js/stun-boot.js?v=2.0.0"></script><script src="/js/scroll.js?v=2.0.0"></script><script src="/js/header.js?v=2.0.0"></script><script src="/js/sidebar.js?v=2.0.0"></script></body></html>
